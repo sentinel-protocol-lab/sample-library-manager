@@ -1,6 +1,7 @@
-"""Shared utilities for all tools: search engine, file helpers, state cache."""
+"""Shared utilities for all tools: search engine, file helpers, state cache, license gating."""
 
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -14,6 +15,11 @@ _last_search_results: list[tuple[str, str]] = []  # [(path, library_name), ...]
 
 # Libraries dict set at server startup from config
 _libraries: dict[str, Path] = {}
+
+# --- License key state ---
+_license_key: str | None = None
+_license_valid: bool = False
+_VALID_KEY_PREFIX = "SLM-PRO-"
 
 
 def set_libraries(libraries: dict[str, Path]) -> None:
@@ -36,6 +42,57 @@ def set_last_search_results(results: list[tuple[str, str]]) -> None:
 def get_last_search_results() -> list[tuple[str, str]]:
     """Get the cached search results."""
     return _last_search_results
+
+
+# --- License key management ---
+
+
+def set_license_key(key: str | None) -> None:
+    """Set and validate the license key. Called at server startup."""
+    global _license_key, _license_valid
+    _license_key = key
+    _license_valid = _validate_key(key) if key else False
+
+
+def is_pro_licensed() -> bool:
+    """Check if the current session has a valid Pro license."""
+    return _license_valid
+
+
+def _validate_key(key: str) -> bool:
+    """Validate a license key format.
+
+    Format: SLM-PRO-<segment>-<payload> (minimum 4 dash-separated parts).
+    In production, replace this with cryptographic signature verification.
+    """
+    if not key or not key.startswith(_VALID_KEY_PREFIX):
+        return False
+    parts = key.split("-")
+    # Minimum structure: SLM-PRO-SEGMENT-PAYLOAD
+    return len(parts) >= 4
+
+
+def require_pro(tool_name: str) -> str | None:
+    """Check Pro license. Returns None if licensed, or an upgrade message if not.
+
+    Usage in tool functions:
+        gate = require_pro("analyze_sample")
+        if gate:
+            return gate
+        # ... rest of tool logic
+    """
+    if _license_valid:
+        return None
+    return (
+        f"'{tool_name}' is a Pro feature.\n"
+        f"Get a license key at https://samplelibrary.pro\n\n"
+        f"Set your key via:\n"
+        f"  - File: ~/.config/sample-library-manager/license.key\n"
+        f"  - Environment: SLM_LICENSE_KEY=your-key-here\n\n"
+        f"Free tools available: search_samples, list_libraries, list_folders, "
+        f"count_samples_in_folder, list_all_samples_in_folder, collect_samples, "
+        f"copy_samples, collect_search_results"
+    )
 
 
 def match_keywords(path_str: str, keywords: list[str]) -> bool:

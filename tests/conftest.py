@@ -68,3 +68,13 @@ def reset_search_cache():
     set_last_search_results([])
     yield
     set_last_search_results([])
+
+
+@pytest.fixture(autouse=True)
+def reset_license():
+    """Reset license state before each test to ensure isolation."""
+    from sample_library_manager.tools._shared import set_license_key
+
+    set_license_key(None)
+    yield
+    set_license_key(None)

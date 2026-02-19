@@ -10,6 +10,7 @@ from ._shared import (
     identify_library,
     parse_filepaths,
     parse_result_numbers,
+    require_pro,
     search_all_libraries,
 )
 
@@ -164,7 +165,11 @@ async def collect_search_results(
     """
     last_results = get_last_search_results()
     if not last_results:
-        return "ERROR: No search results cached. Run search_samples first, then use result numbers to collect files."
+        return (
+            "ERROR: No search results cached.\n"
+            "Hint: Run search_samples(keyword=\"your keyword\") first, "
+            "then use collect_search_results with the result numbers."
+        )
 
     indices = parse_result_numbers(result_numbers)
     if not indices:
@@ -235,8 +240,12 @@ async def rename_with_metadata(
     """Rename audio samples by appending detected BPM and/or musical key to the filename.
 
     First call returns a PREVIEW of old -> new names. Call again with confirm=true to execute.
-    Requires the [audio] extras (librosa).
+    Requires the [audio] extras (librosa). Pro feature.
     """
+    gate = require_pro("rename_with_metadata")
+    if gate:
+        return gate
+
     try:
         import librosa
         import numpy as np
@@ -336,8 +345,12 @@ async def sort_samples(
     """Sort samples matching a keyword into categorized subfolders.
 
     Default categories: Kicks, Snares, Claps, HiHats, Percussion, Bass, FX, Loops, Other.
-    First call returns a PREVIEW. Call again with confirm=true to execute.
+    First call returns a PREVIEW. Call again with confirm=true to execute. Pro feature.
     """
+    gate = require_pro("sort_samples")
+    if gate:
+        return gate
+
     matches = search_all_libraries(source_keyword, max_results)
     if not matches:
         return f"No samples found matching '{source_keyword}' across all libraries"

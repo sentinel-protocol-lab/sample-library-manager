@@ -61,7 +61,7 @@ async def test_collect_search_results_no_cache(mock_libraries, tmp_path):
     dest = str(tmp_path / "collected")
     result = await collect_search_results("1,2", dest, confirm=False)
     assert "ERROR" in result
-    assert "search_samples first" in result
+    assert "search_samples" in result
 
 
 @pytest.mark.asyncio
@@ -75,6 +75,8 @@ async def test_collect_search_results_preview(mock_libraries, tmp_path):
 
 @pytest.mark.asyncio
 async def test_sort_samples_preview(mock_libraries, tmp_path):
+    from sample_library_manager.tools._shared import set_license_key
+    set_license_key("SLM-PRO-test1234-test")
     dest = str(tmp_path / "sorted")
     result = await sort_samples("wav", dest, max_results=20, confirm=False)
     # Should categorize some files
@@ -83,6 +85,8 @@ async def test_sort_samples_preview(mock_libraries, tmp_path):
 
 @pytest.mark.asyncio
 async def test_sort_samples_execute(mock_libraries, tmp_path):
+    from sample_library_manager.tools._shared import set_license_key
+    set_license_key("SLM-PRO-test1234-test")
     dest = str(tmp_path / "sorted")
     result = await sort_samples(
         "kick", dest, categories="Kicks,Other", max_results=10, confirm=True

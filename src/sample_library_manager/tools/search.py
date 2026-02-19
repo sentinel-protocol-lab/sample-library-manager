@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from ._shared import (
+    require_pro,
     search_all_libraries,
     set_last_search_results,
 )
@@ -33,7 +34,11 @@ async def search_samples(keyword: str, max_results: int = 100) -> str:
 
     if not matches:
         set_last_search_results([])
-        return f"No samples found matching '{keyword}' across all libraries"
+        return (
+            f"No samples found matching '{keyword}' across all libraries.\n"
+            f"Hint: Check that libraries are mounted with list_libraries. "
+            f"Try simpler keywords (e.g., 'kick' instead of 'dark punchy kick')."
+        )
 
     # Cache results for collect_search_results
     set_last_search_results(matches)
@@ -56,8 +61,12 @@ async def search_samples_by_bpm(keyword: str, max_results: int = 20) -> str:
     """Search for samples by keyword and automatically detect BPM for each result.
 
     Useful for finding samples at specific tempos. Recommended 5-20 results for speed.
-    Results are balanced across all configured libraries.
+    Results are balanced across all configured libraries. Pro feature.
     """
+    gate = require_pro("search_samples_by_bpm")
+    if gate:
+        return gate
+
     librosa, np = _require_librosa()
 
     matches = search_all_libraries(keyword, max_results)

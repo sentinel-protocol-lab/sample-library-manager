@@ -4,7 +4,7 @@ from pathlib import Path
 
 import mido
 
-from ._shared import identify_library
+from ._shared import identify_library, require_pro
 
 _MIDI_NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -18,8 +18,9 @@ def _require_librosa():
         return librosa, np
     except ImportError:
         raise RuntimeError(
-            "Audio analysis requires the 'audio' extras. "
-            "Install with: pip install sample-library-manager[audio]"
+            "Audio analysis requires the 'audio' extras.\n"
+            "Install with: pip install sample-library-manager[audio]\n"
+            "Hint: If using uvx, run: uvx --with 'sample-library-manager[audio]' sample-library-manager"
         )
 
 
@@ -41,14 +42,22 @@ async def analyze_sample(filepath: str) -> str:
     """Detect BPM and musical key of an audio sample.
 
     Returns tempo, estimated key, duration, and sample rate.
-    Requires the [audio] extras (librosa).
+    Requires the [audio] extras (librosa). Pro feature.
     """
+    gate = require_pro("analyze_sample")
+    if gate:
+        return gate
+
     librosa, np = _require_librosa()
 
     file_path = Path(filepath)
 
     if not file_path.exists():
-        return f"ERROR: File not found at {filepath}"
+        return (
+            f"ERROR: File not found at {filepath}\n"
+            f"Hint: Check if the drive is mounted with list_libraries. "
+            f"Or search for the filename with search_samples(keyword=\"{file_path.stem}\")."
+        )
 
     try:
         # Load audio file (analyze first 30 seconds for speed)
@@ -88,11 +97,18 @@ async def read_midi(filepath: str, track_index: int = 0) -> str:
     """Read a MIDI file and return its notes in bar|beat format.
 
     Returns file metadata (tempo, time signature, track names, total notes).
-    Use track_index=-1 to list all tracks without reading notes.
+    Use track_index=-1 to list all tracks without reading notes. Pro feature.
     """
+    gate = require_pro("read_midi")
+    if gate:
+        return gate
+
     file_path = Path(filepath)
     if not file_path.exists():
-        return f"ERROR: File not found at {filepath}"
+        return (
+            f"ERROR: File not found at {filepath}\n"
+            f"Hint: Search for the MIDI file with search_samples(keyword=\"{file_path.stem}\")."
+        )
 
     if file_path.suffix.lower() not in (".mid", ".midi"):
         return f"ERROR: Not a MIDI file: {file_path.name}"
