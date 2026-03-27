@@ -83,7 +83,7 @@ async def search_samples_by_bpm(keyword: str, max_results: int = 20) -> str:
 
         try:
             y, sr = audio.load_audio(path, duration=15)
-            tempo = audio.detect_tempo(y, sr=sr)
+            tempo, _ = audio.detect_tempo_with_hint(y, sr=sr, filename=filename)
 
             result += f"{i}. {filename}\n"
             result += f"   BPM: {tempo:.1f}\n"

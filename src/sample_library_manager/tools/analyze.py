@@ -63,14 +63,17 @@ async def analyze_sample(filepath: str) -> str:
         # Load audio file (analyze first 30 seconds for speed)
         y, sr = audio.load_audio(str(file_path), duration=30)
 
-        # Detect BPM
-        tempo = audio.detect_tempo(y, sr=sr)
+        # Detect BPM (with filename hint cross-reference)
+        tempo, tempo_confidence = audio.detect_tempo_with_hint(
+            y, sr=sr, filename=file_path.name
+        )
 
         # Detect key using chromagram analysis
         chroma = audio.compute_chroma(y, sr=sr)
         key_idx = int(np.argmax(np.sum(chroma, axis=1)))
         keys = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         detected_key = keys[key_idx]
+        confidence = audio.key_confidence(chroma)
 
         # Get duration
         duration = audio.get_duration(y, sr=sr)
@@ -79,8 +82,16 @@ async def analyze_sample(filepath: str) -> str:
         library_name = identify_library(file_path)
 
         result = f"Analysis of: {file_path.name}\n\n"
-        result += f"BPM: {tempo:.1f}\n"
-        result += f"Key: {detected_key} (estimated)\n"
+        if duration < 3.0 and tempo > 0.0:
+            result += f"BPM: N/A (sample too short for reliable tempo detection)\n"
+        elif tempo_confidence < 0.3 and tempo > 0.0:
+            result += f"BPM: {tempo:.1f} (low confidence — weak rhythmic content)\n"
+        else:
+            result += f"BPM: {tempo:.1f}\n"
+        if confidence < 0.35 or duration < 3.0:
+            result += f"Key: {detected_key} (low confidence — likely unreliable for short/transient samples)\n"
+        else:
+            result += f"Key: {detected_key} (estimated)\n"
         result += f"Duration: {duration:.1f} seconds\n"
         result += f"Sample Rate: {sr} Hz\n"
         result += f"Library: {library_name}\n"

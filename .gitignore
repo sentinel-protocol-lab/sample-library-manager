@@ -37,3 +37,6 @@ license_keys.json
 generate_meeting_pdf.py
 benchmark_audio.py
 _librosa_backup/
+
+# Dev/planning notes
+ANALYSIS_IMPROVEMENTS*.md

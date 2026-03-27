@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "sample-library-manager",
   "display_name": "Sample Library Manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Search your sample library by describing what you want. BPM/key detection, MIDI reading, and AI-powered organisation across multiple libraries.",
   "author": {
     "name": "Sentinel Protocol Lab"
